@@ -1,0 +1,41 @@
+# MCP 及其依赖
+mcp==1.6.0
+anyio>=3.7.1
+httpx>=0.24.1
+httpx-sse>=0.3.1
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+sse-starlette>=1.6.1
+starlette>=0.27.0
+uvicorn>=0.23.0
+# Add numpy dependency with version constraint
+numpy>=1.20,<2.0 # Constrain numpy to < 2.0 for chromadb compatibility
+
+# FastAPI
+fastapi>=0.100.0
+
+# 代码嵌入相关
+langchain>=0.1.0,<0.2.0
+# Add langchain-core explicitly
+langchain-core>=0.1.0,<0.2.0
+langchain-community>=0.0.30,<0.1.0
+langchain-openai>=0.1.0,<0.2.0
+chromadb>=0.4.24,<0.5.0
+sentence-transformers>=2.6.0,<3.0.0
+huggingface_hub>=0.20.0,<0.21.0
+# For testing
+pytest>=7.0.0,<8.0.0
+# OpenAI is optional for embedding fallback
+openai>=1.0.0,<2.0.0
+# Tokenizer for OpenAI models
+tiktoken>=0.6.0,<0.7.0
+
+# 工具和实用程序
+python-dotenv>=1.0.0
+
+# Async testing support
+pytest-asyncio>=0.20,<0.24
+
+# SSE Client for Streamable HTTP Transport
+# Use the latest available version
+aiohttp-sse-client==0.2.1
