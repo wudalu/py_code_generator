@@ -1,33 +1,33 @@
 # Code Generator with MCP Integration
 
-## 项目概述
+## Project Overview
 
-本项目旨在构建一个企业级的 Python 代码生成器，利用大型语言模型 (LLMs)、检索增强生成 (RAG)、模型上下文协议 (MCP) 等技术，自动完成代码的编写、测试和部署。当前阶段实现了基于 RAG 的代码嵌入和语义搜索服务，并支持通过 MCP 协议进行通信。
+This project aims to build an enterprise-level Python code generator leveraging Large Language Models (LLMs), Retrieval Augmented Generation (RAG), Model Context Protocol (MCP), and other techniques to automatically complete code writing, testing, and deployment. The current phase implements a RAG-based code embedding and semantic search service, supporting communication via the MCP protocol.
 
-该服务允许用户处理代码文件，将其转换为向量嵌入并存储到向量数据库中，然后基于语义相似度搜索相关代码。这使得开发者能够快速找到与特定功能或概念相关的代码片段，为后续的代码生成、补全或理解提供基础。
+This service allows users to process code files, transform them into vector embeddings, and store them in a vector database. It then supports searching for relevant code based on semantic similarity. This enables developers to quickly find code snippets related to specific functionalities or concepts, providing a foundation for subsequent code generation, completion, or understanding.
 
-### 目标
+### Goals
 
-1.  包含按步骤有序生成代码的框架 (进行中)
-2.  包含集成历史代码的能力 (通过 RAG 实现)
-3.  包含代码分级，用户分级的能力 (规划中)
-4.  进一步扩展到需求整理，技术方案设计，代码生成与调试，代码运维与发布 (远期目标)
+1.  Include a framework for step-by-step ordered code generation (In progress)
+2.  Include the ability to integrate historical code (Implemented via RAG)
+3.  Include code grading and user grading capabilities (Planned)
+4.  Further extend to requirement refinement, technical solution design, code generation and debugging, code operation and deployment (Long-term goal)
 
-## 工作流
+## Workflow
 
 ```mermaid
 graph TD
-    subgraph "离线处理 (Offline Processing)"
+    subgraph "Offline Processing"
         direction TB
 
-        subgraph "RAG 索引构建 (Indexing)"
+        subgraph "RAG Indexing"
             direction LR
             DS[("Data Source\n(Code Repos, Docs)")] --> Chunk[Chunking]
             Chunk --> Embed1[/"Embedding Model"/]
             Embed1 --> VDB[(Vector DB\nChromaDB)]
         end
 
-        subgraph "模型微调 (SFT)"
+        subgraph "Model Fine-Tuning (SFT)"
             direction LR
             BaseLLM{"Base Code LLM"} --> SFTProcess{Supervised Fine-Tuning}
             SFTData[("SFT Dataset\n(Style, Arch, RAG Usage)")] --> SFTProcess
@@ -35,7 +35,7 @@ graph TD
         end
     end
 
-    subgraph "在线服务 (Runtime - mcp_server_sse)"
+    subgraph "Online Service (Runtime - mcp_server_sse)"
         direction TB
         UserQuery(User Query) --> Embed2[/Embedding Model/]
         Embed2 -- Query Vector --> QueryVDB[Query Vector DB]
@@ -49,66 +49,66 @@ graph TD
     end
 ```
 
-## 模型上下文协议 (MCP)
+## Model Context Protocol (MCP)
 
-本项目使用模型上下文协议 (MCP) 进行客户端与服务器之间的交互。目前支持以下传输方式：
+This project uses the Model Context Protocol (MCP) for interaction between the client and the server. The following transport methods are currently supported:
 
-1.  **STDIO**（标准输入/输出）：使用标准输入和输出流进行通信，适合本地集成和命令行工具。
-2.  **Streamable HTTP**: 使用 HTTP 长连接 (基于 Server-Sent Events) 和标准 HTTP 请求 (POST/DELETE) 进行双向流式通信，适合网络集成和 Web 应用。
+1.  **STDIO** (Standard Input/Output): Uses standard input and output streams for communication, suitable for local integration and command-line tools.
+2.  **Streamable HTTP**: Uses HTTP long connections (based on Server-Sent Events) and standard HTTP requests (POST/DELETE) for bidirectional streaming communication, suitable for network integration and web applications.
 
-*(原 SSE 版本已由 Streamable HTTP 替代)*
+*(The original SSE version has been replaced by Streamable HTTP)*
 
-## 主要组件
+## Main Components
 
-1.  **Embedding Pipeline (`embedding/`)**: 核心功能实现，负责加载代码、使用 AST 或 Tree-sitter 进行解析和元数据提取、分割代码块、生成向量嵌入，并将其存储到 ChromaDB 向量数据库中。
-2.  **RAG Service (`rag/`)**: 结合了 Retriever, ReRanker (可选), Prompt Builder 和 LLM Interface，用于处理用户查询，执行检索、重排序（可选），构建 Prompt，并与 LLM 交互以生成响应。
-3.  **MCP 服务器 (`mcp/`)**: 将 Embedding Pipeline 和 RAG Service 的功能通过 MCP 协议暴露为服务。
-    *   `mcp_server_stdio.py`: STDIO 传输版本。
-    *   `mcp_server_streamablehttp.py`: Streamable HTTP 传输版本。
-4.  **MCP 客户端 (`mcp/`)**: 用于连接 MCP 服务器并调用其工具。
-    *   `mcp_client_stdio.py`: 连接 STDIO 服务器。
-    *   `mcp_client_streamablehttp.py`: 连接 Streamable HTTP 服务器。
-5.  **工具 (`utils/`)**: 提供日志设置等辅助功能。
-6.  **配置 (`config.py`)**: 管理项目配置，如模型名称、API 密钥、持久化目录等。
+1.  **Embedding Pipeline (`embedding/`)**: Implements core functionality responsible for loading code, parsing and extracting metadata using AST or Tree-sitter, splitting code blocks, generating vector embeddings, and storing them in the ChromaDB vector database.
+2.  **RAG Service (`rag/`)**: Combines Retriever, ReRanker (optional), Prompt Builder, and LLM Interface to process user queries, perform retrieval, optional re-ranking, build prompts, and interact with the LLM to generate responses.
+3.  **MCP Server (`mcp/`)**: Exposes the functionality of the Embedding Pipeline and RAG Service as a service via the MCP protocol.
+    *   `mcp_server_stdio.py`: STDIO transport version.
+    *   `mcp_server_streamablehttp.py`: Streamable HTTP transport version.
+4.  **MCP Client (`mcp/`)**: Used to connect to the MCP server and call its tools.
+    *   `mcp_client_stdio.py`: Connects to the STDIO server.
+    *   `mcp_client_streamablehttp.py`: Connects to the Streamable HTTP server.
+5.  **Utilities (`utils/`)**: Provides helper functions such as logging setup.
+6.  **Configuration (`config.py`)**: Manages project configurations such as model names, API keys, persistence directories, etc.
 
-## 安装依赖
+## Installation
 
-需要 Python 3.10 或更高版本。
+Requires Python 3.10 or higher.
 
-1.  **创建虚拟环境** (推荐):
+1.  **Create a virtual environment** (Recommended):
     ```bash
     python -m venv .venv
     source .venv/bin/activate  # Linux/macOS
     # .\.venv\Scripts\activate  # Windows
     ```
-2.  **安装依赖**:
+2.  **Install dependencies**:
     ```bash
     pip install -r requirements.txt
     ```
-    主要依赖包括:
-    *   `langchain`, `langchain_community`, `langchain_core`: RAG 流程核心库。
-    *   `chromadb`: 向量数据库。
-    *   `sentence-transformers`: 用于获取嵌入模型和 Cross-Encoder (ReRanker)。
-    *   `tree-sitter`, `tree-sitter-languages`: 代码解析。
-    *   `aiohttp`, `aiohttp-sse-client==0.2.1`: Streamable HTTP 传输依赖。
-    *   `openai`, `python-dotenv`: LLM 交互和配置管理。
-    *   `pytest`, `pytest-asyncio`: 测试框架。
+    Key dependencies include:
+    *   `langchain`, `langchain_community`, `langchain_core`: Core libraries for the RAG process.
+    *   `chromadb`: Vector database.
+    *   `sentence-transformers`: For embedding models and Cross-Encoder (ReRanker).
+    *   `tree-sitter`, `tree-sitter-languages`: Code parsing.
+    *   `aiohttp`, `aiohttp-sse-client==0.2.1`: Streamable HTTP transport dependencies.
+    *   `openai`, `python-dotenv`: LLM interaction and configuration management.
+    *   `pytest`, `pytest-asyncio`: Testing framework.
 
-## 使用方法
+## Usage
 
-### Streamable HTTP 版本 (推荐)
+### Streamable HTTP Version (Recommended)
 
-#### 启动 Streamable HTTP 服务器
+#### Start Streamable HTTP Server
 
-在项目根目录下运行 (确保 `.venv` 已激活):
+Run from the project root directory (ensure `.venv` is activated):
 
 ```bash
 python -m mcp.mcp_server_streamablehttp
 ```
 
-服务器将在端口 8080 (默认) 上启动，等待客户端连接。
+The server will start on port 8080 (default), waiting for client connections.
 
-#### 使用 Streamable HTTP 客户端 (编程方式)
+#### Use Streamable HTTP Client (Programmatic)
 
 ```python
 import asyncio
@@ -117,127 +117,213 @@ from mcp.mcp_client_streamablehttp import StreamableHttpClient
 async def main():
     SERVER_URL = "http://localhost:8080"
     TEST_COLLECTION_NAME = "my_code_project"
-    # 示例文件路径 (请替换为实际路径)
+    # Example file paths (please replace with actual paths)
     # file_paths = ["path/to/your/code.py", "path/to/another/file.py"]
     file_paths = ["embedding/storage/chroma.py", "mcp/transports/streamable_http_client_transport.py"]
 
 
-    # 创建客户端
+    # Create client
     client = StreamableHttpClient(SERVER_URL)
 
     try:
-        # 连接并初始化
+        # Connect and initialize
         capabilities = await client.initialize()
-        print(f"连接成功！服务器能力: {capabilities}")
+        print(f"Connected successfully! Server capabilities: {capabilities}")
 
-        # (可选) 清理旧集合
-        print(f"尝试清理集合: {TEST_COLLECTION_NAME}")
+        # (Optional) Clean up old collection
+        print(f"Attempting to clean up collection: {TEST_COLLECTION_NAME}")
         await client.delete_collection(TEST_COLLECTION_NAME)
 
-        # 处理代码文件
-        print(f"处理文件: {file_paths}")
+        # Process code files
+        print(f"Processing files: {file_paths}")
         result = await client.process_files(file_paths, TEST_COLLECTION_NAME)
-        print(f"处理结果: {result}")
+        print(f"Processing result: {result}")
         if result.get("status") != "success":
-            print("文件处理失败，后续步骤可能无法正常工作。")
+            print("File processing failed, subsequent steps may not work correctly.")
             return
 
-        # 列出所有集合
+        # List all collections
         collections = await client.list_collections()
-        print(f"当前集合列表: {collections}")
+        print(f"Current collections list: {collections}")
 
-        # 获取集合信息
+        # Get collection info
         info = await client.get_collection_info(TEST_COLLECTION_NAME)
-        print(f"集合 '{TEST_COLLECTION_NAME}' 信息: {info}")
+        print(f"Collection '{TEST_COLLECTION_NAME}' info: {info}")
 
-        # 搜索代码
+        # Search code
         query = "how to send message via http post"
-        print(f"搜索: '{query}'")
+        print(f"Searching: '{query}'")
         search_results = await client.search_code(query, k=3, collection_name=TEST_COLLECTION_NAME)
-        print(f"搜索结果数量: {len(search_results)}")
+        print(f"Number of search results: {len(search_results)}")
         for i, res in enumerate(search_results):
-             print(f"  结果 {i+1}:")
+             print(f"  Result {i+1}:")
              print(f"    Source: {res.get('metadata', {}).get('source')}")
-             print(f"    Content: {res.get('content', '')[:150]}...") # 打印部分内容
+             print(f"    Content: {res.get('content', '')[:150]}...") # Print partial content
 
     except ConnectionError as e:
-        print(f"连接错误: {e}")
+        print(f"Connection error: {e}")
     except Exception as e:
-        print(f"发生错误: {e}")
+        print(f"An error occurred: {e}")
     finally:
-        # 断开连接
+        # Disconnect
         if client.is_connected:
             await client.close()
-            print("连接已关闭。")
+            print("Connection closed.")
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
-*(注意: 上述客户端示例需要根据实际文件路径调整，并且需要 Streamable HTTP 服务器正在运行)*
+*(Note: The above client example needs adjustment based on actual file paths, and the Streamable HTTP server needs to be running)*
 
-### STDIO 版本 (本地/调试)
+### STDIO Version (Local/Debugging)
 
-#### 启动 STDIO 服务器
+#### Start STDIO Server
 
 ```bash
 python -m mcp.mcp_server_stdio
 ```
 
-#### 使用 STDIO 客户端
+#### Use STDIO Client
 
 ```bash
 python -m mcp.mcp_client_stdio
 ```
-这将启动一个交互式界面。
+This will start an interactive interface.
 
-## 功能详解 (MCP 工具)
+## Function Details (MCP Tools)
 
-服务器通过 MCP 协议暴露以下工具:
+The server exposes the following tools via the MCP protocol:
 
-*   `initialize`: 初始化连接，返回服务器能力。
-*   `process_files`: 处理代码文件 (解析、嵌入、存储)。
-    *   参数: `file_paths` (List[str]), `collection_name` (str)
-    *   返回: 处理结果 `Dict` (`status`, `message`, `file_count`, `chunk_count`, `collection_name`)
-*   `search_code`: 语义搜索代码块。
-    *   参数: `query` (str), `k` (int), `collection_name` (Optional[str])
-    *   返回: 搜索结果列表 `List[Dict]` (每个包含 `content`, `metadata`)
-*   `load_collection`: (主要由内部使用) 加载指定集合以供后续操作。
-    *   参数: `collection_name` (Optional[str])
-    *   返回: 加载状态 `Dict` (`status`, `message`)
-*   `list_collections`: 列出所有可用的集合名称。
-    *   参数: 无
-    *   返回: `Dict` (`collections`: List[str])
-*   `get_collection_info`: 获取特定集合的信息 (如文档数量)。
-    *   参数: `collection_name` (str)
-    *   返回: 集合信息 `Dict` (`name`, `count`, `persist_directory`, `error`?)
-*   `delete_collection`: 删除指定的集合。
-    *   参数: `collection_name` (str)
-    *   返回: 操作状态 `Dict` (`status`, `message`)
+*   `initialize`: Initializes the connection, returns server capabilities.
+*   `process_files`: Processes code files (parses, embeds, stores).
+    *   Parameters: `file_paths` (List[str]), `collection_name` (str)
+    *   Returns: Processing result `Dict` (`status`, `message`, `file_count`, `chunk_count`, `collection_name`)
+*   `search_code`: Semantically searches code blocks.
+    *   Parameters: `query` (str), `k` (int), `collection_name` (Optional[str])
+    *   Returns: List of search results `List[Dict]` (each containing `content`, `metadata`)
+*   `load_collection`: (Mainly for internal use) Loads the specified collection for subsequent operations.
+    *   Parameters: `collection_name` (Optional[str])
+    *   Returns: Load status `Dict` (`status`, `message`)
+*   `list_collections`: Lists all available collection names.
+    *   Parameters: None
+    *   Returns: `Dict` (`collections`: List[str])
+*   `get_collection_info`: Gets information about a specific collection (e.g., document count).
+    *   Parameters: `collection_name` (str)
+    *   Returns: Collection info `Dict` (`name`, `count`, `persist_directory`, `error`?)
+*   `delete_collection`: Deletes the specified collection.
+    *   Parameters: `collection_name` (str)
+    *   Returns: Operation status `Dict` (`status`, `message`)
 
-## 实现特点
+## Implementation Features
 
-1.  **异步设计**: 全链路使用 `asyncio` 提高并发处理能力。
-2.  **MCP 协议**: 使用标准化的 MCP 协议进行客户端/服务器通信。
-3.  **Streamable HTTP**: 支持流式、长连接的 HTTP 传输。
-4.  **模块化**: 清晰的模块划分 (embedding, rag, mcp, transports, utils)。
-5.  **RAG 流程**:
-    *   使用 `ChromaDB` 作为向量存储。
-    *   支持 `sentence-transformers` 加载嵌入模型。
-    *   集成 **ReRanker** (基于 `sentence-transformers` CrossEncoder) 对检索结果进行重排序 (可选，通过配置启用)。
-    *   支持从配置加载不同 LLM (当前主要是 OpenAI)。
-    *   **上下文管理**: RAG 服务会根据 LLM 的上下文窗口大小自动截断输入文档块，防止超长。
-6.  **代码解析**: 使用 `tree-sitter` 进行代码解析和块分割。
-7.  **配置驱动**: 通过 `config.py` 和 `.env` 文件管理配置。
-8.  **类型提示**: 广泛使用类型提示提高代码质量。
-9.  **测试**: 包含使用 `pytest` 和 `pytest-asyncio` 的集成测试。
+1.  **Asynchronous Design**: Uses `asyncio` throughout to improve concurrent processing capabilities.
+2.  **MCP Protocol**: Uses the standardized MCP protocol for client/server communication.
+3.  **Streamable HTTP**: Supports streaming, long-lived HTTP transport.
+4.  **Modularity**: Clear module separation (embedding, rag, mcp, transports, utils).
+5.  **RAG Flow**:
+    *   Uses `ChromaDB` as the vector store.
+    *   Supports loading embedding models using `sentence-transformers`.
+    *   Integrates **ReRanker** (based on `sentence-transformers` CrossEncoder) to re-rank retrieval results (optional, enabled via config).
+    *   Supports loading different LLMs from config (currently primarily OpenAI).
+    *   **Context Management**: The RAG service automatically truncates input document blocks based on the LLM's context window size to prevent exceeding limits.
+6.  **Code Parsing**: Uses `tree-sitter` for code parsing and block splitting.
+7.  **Configuration Driven**: Manages configuration via `config.py` and `.env` files.
+8.  **Type Hinting**: Extensive use of type hints to improve code quality.
+9.  **Testing**: Includes integration tests using `pytest` and `pytest-asyncio`.
 
-## 测试结果
+## Test Results
 
-| 实现                     | 状态       | 备注                                               |
+| Implementation                     | Status       | Notes                                               |
 | ------------------------ | ---------- | -------------------------------------------------- |
-| Embedding Pipeline       | ✅ 基本可用 | 需要进一步优化元数据提取和关联                |
-| RAG Service              | ✅ 基本可用 | 集成了 ReRanker 和上下文截断                     |
-| MCP STDIO Server         | ✅ 可运行   | 功能与 Streamable HTTP 版本同步可能略有延迟 |
-| MCP STDIO Client         | ✅ 可运行   | 功能与 Streamable HTTP 版本同步可能略有延迟 |
-| MCP Streamable HTTP Server | ✅ 正常工作 | 通过 `test_embed_pipeline.py` 测试             |
-| MCP Streamable HTTP Client | ✅ 正常工作 | 通过 `
+| Embedding Pipeline       | ✅ Basic Functionality | Needs further optimization for metadata extraction and association |
+| RAG Service              | ✅ Basic Functionality | Integrated ReRanker and context truncation                     |
+| MCP STDIO Server         | ✅ Running   | Functionality may slightly lag behind Streamable HTTP version |
+| MCP STDIO Client         | ✅ Running   | Functionality may slightly lag behind Streamable HTTP version |
+| MCP Streamable HTTP Server | ✅ Working | Tested via `test_embed_pipeline.py`             |
+| MCP Streamable HTTP Client | ✅ Working | Tested via `test_embed_pipeline.py`             |
+| Integration Tests (`tests/`)    | ✅ Passing     | `test_embed_pipeline.py` fixed and passing           |
+
+## Best Practices
+
+1.  **Configuration Management**: Use a `.env` file to store sensitive information (API Keys) and environment-specific configurations.
+2.  **Sensible Collection Naming**: Use meaningful collection names for easier management and searching.
+3.  **Handling Large Codebases**: For large codebases, consider processing files in batches and monitoring memory usage.
+4.  **Optimizing Search Queries**: Use specific, clear search queries to improve the relevance of search results.
+5.  **Error Handling**: Add `try...except` blocks in client code to handle potential connection or server errors.
+6.  **Test Coverage**: Continuously add unit and integration tests to ensure code quality.
+
+## Directory Structure (Overview)
+
+```
+py_code_generator/
+├── .venv/                  # Python Virtual Environment
+├── chat.md                 # Development Chat History
+├── chroma_db_store/        # ChromaDB Persistent Data
+├── codes_for_embedding/    # (Optional) Example or Downloaded Codebases
+├── config.py               # Global Configuration File
+├── embedding/              # Code Embedding Core Logic
+│   ├── __init__.py
+│   ├── chunker.py          # (Placeholder) Code Chunking Logic (currently in pipeline)
+│   ├── model_loader.py     # Load Embedding Models
+│   ├── pipeline.py         # Embedding Processing Pipeline
+│   ├── splitter/           # Code Splitter Implementations
+│   │   ├── __init__.py
+│   │   ├── interface.py
+│   │   ├── ast_python.py   # (Old) AST-based Splitter
+│   │   └── fallback.py     # (Old) Langchain-based Splitter
+│   └── storage/            # Vector Storage Implementations
+│       ├── __init__.py
+│       ├── interface.py
+│       └── chroma.py       # ChromaDB Implementation
+├── guideline.md            # (Old) Design Guidelines
+├── log/                    # Log File Directory
+├── mcp/                    # MCP Protocol Implementations
+│   ├── __init__.py
+│   ├── transports/         # MCP Transport Layer Implementations
+│   │   ├── __init__.py
+│   │   ├── streamable_http_client_transport.py
+│   │   └── streamable_http_server_transport.py
+│   ├── mcp_client_stdio.py # STDIO Client Application Layer
+│   ├── mcp_client_streamablehttp.py # Streamable HTTP Client Application Layer
+│   ├── mcp_server_stdio.py # STDIO Server Application Layer
+│   └── mcp_server_streamablehttp.py # Streamable HTTP Server Application Layer
+├── rag/                    # RAG Implementations
+│   ├── __init__.py
+│   ├── llm_interface.py    # LLM Interface Definitions and Implementations
+│   ├── prompt_builder.py   # Prompt Builder
+│   ├── reranker.py         # ReRanker Implementation
+│   ├── retriever.py        # Retriever Implementation (wraps VectorStore)
+│   └── service.py          # RAG Service Orchestration
+├── README.md               # Project Description (This Document)
+├── requirements.txt        # Python Dependencies List
+├── scripts/                # Helper Scripts (e.g., launching servers)
+├── tests/                  # Test Code
+│   ├── __init__.py
+│   ├── test_code_files/    # Test Code Files
+│   └── test_embed_pipeline.py # End-to-End Integration Test
+└── utils/                  # General Utility Modules
+    ├── __init__.py
+    └── logging_setup.py    # Logging Configuration
+```
+
+## Future Work
+
+1.  **Code Embedding Optimization**:
+    *   Improve metadata extraction: More precisely associate class/function names and ranges extracted by AST/Tree-sitter with code blocks.
+    *   Explore different code splitting strategies.
+2.  **RAG Optimization**:
+    *   **Filtering**: Filter out low-relevance blocks based on score after re-ranking.
+    *   **Deduplication**: Remove semantically highly similar code blocks.
+    *   **Re-packing/Reordering**: Experiment with different block ordering strategies (e.g., Reverse).
+    *   **Evaluation**: Establish a more complete RAG performance evaluation process.
+3.  **Code Generation Integration**: Use RAG results as context to actually call the LLM for code generation or completion.
+4.  **Testing**: Add unit tests to cover embedding, rag, and mcp modules.
+5.  **Error Handling & Robustness**: Further refine error handling and edge case considerations.
+
+## References
+
+- [MCP Protocol (Concept)](https://microsoft.github.io/language-server-protocol/specifications/mcp/) - *Note: This project's implementation may differ from the official specification*
+- [LangChain Documentation](https://python.langchain.com/)
+- [ChromaDB Documentation](https://docs.trychroma.com/)
+- [Sentence Transformers Documentation](https://www.sbert.net/)
+- [AIOHTTP Documentation](https://docs.aiohttp.org/)
